@@ -14,19 +14,37 @@ let users = {
         id: "1",
         firstname: "Joao",
         lastname: "Franco",
+        messageIds: [1],
     },
     2: {
         id: "2",
         firstname: "Billy",
         lastname: "Bob",
-    }
+        messageIds: [2],
+    },
+}
+
+let messages = {
+    1: {
+        id: "1",
+        text: "Hello World",
+        userId: "1",
+    },
+    2: {
+        id: "2",
+        text: "Olá Mundo",
+        userId: "2",
+    },
 }
 
 const typeDefs = gql`
     type Query {
-        me: User
-        user(id: ID!): User
         users: [User!]
+        user(id: ID!): User
+        me: User
+
+        messages: [Message!]!
+        message(id: ID!): Message!
     }
 
     type User {
@@ -34,32 +52,56 @@ const typeDefs = gql`
         username: String!
         firstname: String!
         lastname: String!
+        messages: [Message!]
+    }
+
+    type Message {
+        id: ID!
+        text: String!
+        user: User!
     }
 `;
 
-const resolvers  = {
+const resolvers = {
     Query: {
-        me: (parent, args, {me}) => {
-            return me;
-        },
-        user: (parent, {id}) => {
-            return users[id];
-        },
         users: () => {
             return Object.values(users);
         },
+        user: (parent, { id }) => {
+            return users[id];
+        },
+        me: (parent, args, { me }) => {
+            return me;
+        },
+        messages: () => {
+            return Object.values(messages);
+        },
+        message: (parent, { id }) => {
+            return messages[id];
+        }
     },
     User: {
         //resolver para type User
         //o data source nao possui username, mas graphql disponibiliza
         username: (user) => `${user.firstname} ${user.lastname}`,
+        //data source array de messageid que precisa ser resolvido para mensagens
+        messages: (user) => {
+            return Object.values(messages).filter( message => message.userId === user.id)
+        },
     },
+    Message: {
+        //Mensagens são criados pelo usuário autenticado
+        //user não está no data source
+        user: message => {
+            return users[message.userId];
+        }
+    }
 };
 
 const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context:{
+    context: {
         me: users[1],
     },
 });
@@ -69,6 +111,6 @@ server.applyMiddleware({
     path: "/graphql"
 });
 
-app.listen({port:8000}, ()=>{
+app.listen({ port: 8000 }, () => {
     console.log("Apollo Server on http://localhost:8000/graphql");
 });
