@@ -12,14 +12,15 @@ app.use(cors());
 let users = {
     1: {
         id: "1",
-        username: "Joao Franco"
+        firstname: "Joao",
+        lastname: "Franco",
     },
     2: {
         id: "2",
-        username: "Billy Bob"
+        firstname: "Billy",
+        lastname: "Bob",
     }
 }
-const me = users[1];
 
 const typeDefs = gql`
     type Query {
@@ -31,12 +32,14 @@ const typeDefs = gql`
     type User {
         id: ID!
         username: String!
+        firstname: String!
+        lastname: String!
     }
 `;
 
 const resolvers  = {
     Query: {
-        me: () => {
+        me: (parent, args, {me}) => {
             return me;
         },
         user: (parent, {id}) => {
@@ -45,12 +48,20 @@ const resolvers  = {
         users: () => {
             return Object.values(users);
         },
-    }
-}
+    },
+    User: {
+        //resolver para type User
+        //o data source nao possui username, mas graphql disponibiliza
+        username: (user) => `${user.firstname} ${user.lastname}`,
+    },
+};
 
 const server = new ApolloServer({
     typeDefs,
     resolvers,
+    context:{
+        me: users[1],
+    },
 });
 
 server.applyMiddleware({
