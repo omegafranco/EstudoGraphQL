@@ -4,6 +4,7 @@ console.log(process.env.MY_SECRET);
 import cors from "cors";
 import express from "express";
 import { ApolloServer, gql } from "apollo-server-express";
+import uuidv4 from "uuid/v4";
 
 const app = express();
 
@@ -46,6 +47,12 @@ const typeDefs = gql`
         messages: [Message!]!
         message(id: ID!): Message!
     }
+    
+    type Mutation {
+        createMessage(text: String!): Message!
+        updateMessage(id: ID!, text: String!): Message
+        deleteMessage(id: ID!): Boolean!
+    }
 
     type User {
         id: ID!
@@ -80,13 +87,46 @@ const resolvers = {
             return messages[id];
         }
     },
+    Mutation: {
+        createMessage: (parent, { text }, { me }) => {
+            const id = uuidv4();
+            const message = {
+                id,
+                text,
+                userId: me.id,
+            };
+            messages[id] = message;
+            users[me.id].messageIds.push(id);
+            return message;
+        },
+        //object destructuring para remover mensagens
+        deleteMessage: (parent, { id }) => {
+            const { [id]: message, ...otherMessages } = messages;
+
+            if (!message) {
+                return false;
+            }
+            messages = otherMessages;
+            return true;
+        },
+        updateMessage: (parent, { id, text }) => {
+            const { [id]: message } = messages;
+
+            if (!message) {
+                return null;
+            }
+            message.text = text;
+            messages[id] = message;
+            return message;
+        }
+    },
     User: {
         //resolver para type User
         //o data source nao possui username, mas graphql disponibiliza
         username: (user) => `${user.firstname} ${user.lastname}`,
         //data source array de messageid que precisa ser resolvido para mensagens
         messages: (user) => {
-            return Object.values(messages).filter( message => message.userId === user.id)
+            return Object.values(messages).filter(message => message.userId === user.id)
         },
     },
     Message: {
