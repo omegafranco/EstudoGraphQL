@@ -1,13 +1,13 @@
 export default {
     Query: {
-        users: (parent, args, { models }) => {
-            return Object.values(models.users);
+        users: async (parent, args, { models }) => {
+            return await models.User.findAll();
         },
-        user: (parent, { id }, { models }) => {
-            return models.users[id];
+        user: async (parent, { id }, { models }) => {
+            return await models.User.findByPk(id);
         },
-        me: (parent, args, { me }) => {
-            return me;
+        me: async (parent, args, { me, models }) => {
+            return await models.User.findByPk(me.id);
         },
     },
     User: {
@@ -15,8 +15,10 @@ export default {
         //o data source nao possui username, mas graphql disponibiliza
         username: (user) => `${user.firstname} ${user.lastname}`,
         //data source array de messageid que precisa ser resolvido para mensagens
-        messages: (user, args, { models }) => {
-            return Object.values(models.messages).filter(message => message.userId === user.id)
+        messages: async (user, args, { models }) => {
+            return await models.Message.findAll({
+                where: { userId: user.id },
+            });
         },
     },
 };
