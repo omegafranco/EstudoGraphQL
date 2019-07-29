@@ -13,6 +13,7 @@ export default gql`
         username: String!
         firstname: String!
         lastname: String!
+        fullname: String!
         messages: [Message!]
     }
 `;

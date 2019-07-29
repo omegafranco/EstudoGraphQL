@@ -4,15 +4,23 @@ const user = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
         },
         lastname: {
-            type: DataTypes.STRING
-        }
+            type: DataTypes.STRING,
+        },
+        username: {
+            type: DataTypes.STRING,
+            unique: true,
+            allowNull: false,
+            validate: {
+                notEmpty: true,
+            },
+        },
     });
     User.associate = models => {
         User.hasMany(models.Message, { onDelete: "CASCADE" });
     };
     User.findByLogin = async login => {
         let user = await User.findOne({
-            where: { firstname: login }
+            where: { username: login }
         });
         if (!user) {
             user = await User.findOne({

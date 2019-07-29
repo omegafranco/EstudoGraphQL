@@ -1,5 +1,4 @@
 import "dotenv/config";
-console.log(process.env.MY_SECRET);
 
 import cors from "cors";
 import express from "express";
@@ -17,9 +16,20 @@ app.use(cors());
 const server = new ApolloServer({
     typeDefs: schema,
     resolvers,
+    formatError: error => {
+        //Remove a mensagem interna do sequelize
+        //Deixa apenas o validation error do modelo
+        const message = error.message
+            .replace("SequelizeValidationError: ", "")
+            .replace("Validation error: ", "");
+        return {
+            ...error,
+            message
+        }
+    },
     context: async () => ({
         models,
-        me: await models.User.findByLogin("Joao"),
+        me: await models.User.findByLogin("omegafranco"),
     }),
 });
 
@@ -45,6 +55,7 @@ const createUsersWithMessages = async () => {
         {
             firstname: "Joao",
             lastname: "Franco",
+            username: "omegafranco",
             messages: [
                 { text: "Olá pra você." },
                 { text: "Tudo bem?" },
@@ -58,6 +69,7 @@ const createUsersWithMessages = async () => {
         {
             firstname: "Billy",
             lastname: "Bob",
+            username: "BillyBob",
             messages: [
                 { text: "Eai" },
                 { text: "Certinho" },
