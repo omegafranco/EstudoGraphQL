@@ -14,10 +14,12 @@ export default gql`
             email: String!
             password: String!
         ): Token!
-        
+
         signIn(
             login: String!, password: String!
         ): Token!
+
+        deleteUser( id: ID!): Boolean!
     }
 
     type Token {
@@ -31,6 +33,7 @@ export default gql`
         lastname: String!
         fullname: String!
         email: String!
+        role: String
         messages: [Message!]
     }
 `;

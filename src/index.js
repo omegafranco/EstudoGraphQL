@@ -2,7 +2,8 @@ import "dotenv/config";
 
 import cors from "cors";
 import express from "express";
-import { ApolloServer } from "apollo-server-express";
+import jwt from "jsonwebtoken";
+import { ApolloServer, AuthenticationError } from "apollo-server-express";1
 
 
 import schema from "./schema";
@@ -13,6 +14,16 @@ const app = express();
 
 app.use(cors());
 
+const getMe = async req => {
+    const token =  req.headers["x-token"];
+    if (token) {
+        try {
+            return await jwt.verify(token, process.env.SECRET)
+        } catch (e) {
+            throw new AuthenticationError("Sua sessão expirou. Efetue login novamente.");
+        }
+    }
+}
 const server = new ApolloServer({
     typeDefs: schema,
     resolvers,
@@ -27,11 +38,15 @@ const server = new ApolloServer({
             message
         }
     },
-    context: async () => ({
-        models,
-        me: await models.User.findByLogin("omegafranco"),
-        secret: process.env.SECRET,
-    }),
+    context: async ({ req }) => {
+        const me = await getMe(req);
+        return {
+            models,
+            me,
+            secret: process.env.SECRET,
+        };
+    }
+
 });
 
 server.applyMiddleware({
@@ -59,6 +74,7 @@ const createUsersWithMessages = async () => {
             username: "omegafranco",
             email: "omegafranco@omegafranco.com",
             password: "omegafranco",
+            role: "ADMIN", // potencial mudança para array com multiplos perfis
             messages: [
                 { text: "Olá pra você." },
                 { text: "Tudo bem?" },
